@@ -1,0 +1,3 @@
+import {description} from '@/lib/content';
+export const metadata={title:'关于 supasara'};
+export default function Page(){return <div className="wrap page about"><p className="eyebrow">ABOUT THE FIELD GUIDE</p><h1>专业英语，回到工作现场。</h1><p className="lead">{description}</p><h2>为谁而写？</h2><p>为中文母语的仓储、物流与供应链从业者，也为正在进入这个领域的学习者。我们把术语放回真实业务问题：货在哪里、什么时候能交付、系统如何协同、指标怎样解读。</p><h2>每篇都能带走什么？</h2><p>核心术语、概念与场景、原创教学案例、双语工作表达、常见混淆，以及简明回顾。你可以从分类系统学习，也可以在需要时查一个词。</p><h2>同一个缩写，不总是同一个意思。</h2><p>词库区分平台、系统和统计语境。对存在歧义或尚未确认的说法，我们保留说明，而不补造定义。工作中使用时，请结合具体合同、系统规则与业务口径。</p><h2>从文章到一本书</h2><p>本合集整理自作者的小红书供应链英语主题，并按统一结构重新撰写。网站与完整 PDF、EPUB 共用内容，方便在线查阅和离线阅读。</p></div>}

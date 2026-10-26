@@ -1,0 +1,15 @@
+'use client';
+import {useEffect,useMemo,useState} from 'react';
+import Link from 'next/link';
+import {search} from '@/lib/search.mjs';
+type Row={id:string;kind:string;title:string;description:string;note:string;status:string;articleIds:string[];categoryIds:string[];href:string;keys:string[];normalized:string;body?:string};
+export default function Search({categories,compact=false}:{categories:{id:string;title_zh:string}[];compact?:boolean}){
+ const [query,setQuery]=useState(''),[category,setCategory]=useState(''),[rows,setRows]=useState<Row[]>([]),[state,setState]=useState('loading'),[limit,setLimit]=useState(15);
+ useEffect(()=>{const controller=new AbortController();fetch('/data/search.json',{signal:controller.signal}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(r=>{setRows(r);setState('ready')}).catch(e=>{if(e.name!=='AbortError')setState('error')});const q=new URLSearchParams(window.location.search).get('q');if(q)setQuery(q);return()=>controller.abort()},[]);
+ const results=useMemo(()=>search(rows,query,category),[rows,query,category]);
+ return <div className={compact?'search-shell compact':'search-shell'}><form role="search" onSubmit={e=>{e.preventDefault();document.getElementById('results')?.scrollIntoView({behavior:'smooth',block:'start'})}}><label htmlFor="query" className="search-label">查一个词，理解一个场景</label><div className="search-input-row"><span aria-hidden="true" className="search-symbol">⌕</span><input id="query" disabled={state!=='ready'} value={query} onChange={e=>{setQuery(e.target.value);setLimit(15)}} placeholder="试试 ATP、可承诺量、Bill of Lading…" autoComplete="off"/><button type="submit" disabled={state!=='ready'} className="button">查词 <span aria-hidden="true">↗</span></button></div><div className="search-tools"><label>范围 <select aria-label="搜索分类" value={category} onChange={e=>{setCategory(e.target.value);setLimit(15)}}><option value="">全部分类</option>{categories.map(c=><option value={c.id} key={c.id}>{c.title_zh}</option>)}</select></label>{query?<button type="button" className="text-button" onClick={()=>setQuery('')}>清空搜索</button>:<span>中文 · English · 缩写</span>}</div></form>
+ {!query&&state!=='ready'&&<p role="status">{state==='loading'?'正在加载词库…':'词库加载失败，请刷新重试。'}</p>}{!query&&<div className="quick-terms"><span>常用词</span>{['SKU','ATP','OTIF','WMS','ABC'].map(q=><button key={q} disabled={state!=='ready'} onClick={()=>setQuery(q)}>{q}</button>)}</div>}
+ {query&&<div id="results" className="results"><p role="status" aria-live="polite">{state==='loading'?'正在加载词库…':state==='error'?'词库加载失败，请刷新重试。':`找到 ${results.length} 个结果`}</p>{state==='ready'&&results.length===0&&<p>没有匹配结果。试试英文全称、中文名称或更短的关键词。</p>}{results.slice(0,limit).map((r:Row)=><Link key={r.id} href={r.href} className="result"><div><span className="eyebrow">{r.kind==='term'?'词汇':'文章'} · {r.articleIds.join(' / ')}</span><h3>{r.title}</h3><p>{r.description}</p>{r.note&&<small className={r.status==='unresolved'?'warning':'muted'}>{r.note}</small>}</div><span aria-hidden="true">↗</span></Link>)}{results.length>limit&&<button className="button secondary" onClick={()=>setLimit(limit+20)}>再显示 20 条</button>}</div>}
+ </div>;
+}
+

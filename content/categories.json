@@ -1,0 +1,51 @@
+[
+  {
+    "id": "C01",
+    "slug": "foundations",
+    "order": 1,
+    "title_zh": "基础术语与概念",
+    "title_en": "Foundations"
+  },
+  {
+    "id": "C02",
+    "slug": "warehousing",
+    "order": 2,
+    "title_zh": "仓储作业",
+    "title_en": "Warehousing"
+  },
+  {
+    "id": "C03",
+    "slug": "inventory-planning",
+    "order": 3,
+    "title_zh": "库存管理与计划",
+    "title_en": "Inventory and Planning"
+  },
+  {
+    "id": "C04",
+    "slug": "logistics-trade",
+    "order": 4,
+    "title_zh": "物流运输与国际贸易",
+    "title_en": "Logistics and International Trade"
+  },
+  {
+    "id": "C05",
+    "slug": "fulfillment",
+    "order": 5,
+    "title_zh": "供应链流程与订单履行",
+    "title_en": "Supply Chain Processes and Fulfillment"
+  },
+  {
+    "id": "C06",
+    "slug": "systems-technology",
+    "order": 6,
+    "title_zh": "系统与技术术语",
+    "title_en": "Systems and Technology"
+  },
+  {
+    "id": "C07",
+    "slug": "metrics-analysis",
+    "order": 7,
+    "title_zh": "绩效指标与数据分析",
+    "title_en": "Metrics and Data Analysis"
+  }
+]

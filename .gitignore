@@ -147,3 +147,12 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Supasara generated content and local verification artifacts
+data/
+public/data/
+tmp/
+test-results/
+playwright-report/
+__pycache__/
+*.tsbuildinfo
