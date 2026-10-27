@@ -1,0 +1,5 @@
+
+# Preserve downloadable books and QR image bytes.
+*.pdf binary
+*.epub binary
+*.png binary

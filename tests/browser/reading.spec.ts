@@ -1,4 +1,14 @@
 import {test,expect} from '@playwright/test';
+test('author profile includes the original account card',async({page},testInfo)=>{
+ await page.goto('/about/');
+ await expect(page.getByRole('heading',{name:'作者 · 雨叔'})).toBeVisible();
+ await expect(page.locator('.author-profile')).toContainText('雨叔 北美仓储管理');
+ const card=page.getByRole('img',{name:'雨叔 北美仓储管理的小红书账号卡片及二维码'});
+ await expect(card).toBeVisible();
+ await expect(card).toHaveJSProperty('naturalWidth',1011);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
+ await page.screenshot({path:testInfo.outputPath('about.png'),fullPage:true});
+});
 test('home and category navigation work on desktop and mobile',async({page},testInfo)=>{
  await page.goto('/');
  await expect(page.getByRole('heading',{level:1})).toContainText('读懂供应链');

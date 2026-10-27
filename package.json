@@ -8,13 +8,13 @@
   },
   "scripts": {
     "prepare:content": "node scripts/prepare.mjs",
-    "dev": "node scripts/prepare.mjs && next dev",
+    "dev": "node scripts/prepare-cache.mjs && node scripts/prepare.mjs && node node_modules/next/dist/bin/next dev --webpack",
     "preview": "node scripts/preview.mjs",
-    "build": "node scripts/prepare.mjs && next build",
-    "check": "tsc --noEmit",
+    "build": "node scripts/prepare-cache.mjs && node scripts/prepare.mjs && node node_modules/next/dist/bin/next build",
+    "check": "node node_modules/typescript/bin/tsc --noEmit",
     "test": "node scripts/prepare.mjs && node --test tests/*.test.mjs",
     "books": "python scripts/build_books.py",
-    "test:browser": "playwright test"
+    "test:browser": "node node_modules/@playwright/test/cli.js test"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.0",

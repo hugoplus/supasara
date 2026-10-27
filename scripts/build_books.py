@@ -5,7 +5,7 @@ Set BOOK_FONT and BOOK_FONT_BOLD to Unicode TrueType fonts for other platforms.
 from pathlib import Path
 import html, json, os, re, zipfile, hashlib
 from xml.etree import ElementTree as ET
-from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, Table, TableStyle, KeepTogether
+from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, Table, TableStyle, KeepTogether, Image
 from reportlab.platypus.tableofcontents import TableOfContents
 from reportlab.lib import colors
 from reportlab.lib.styles import ParagraphStyle
@@ -13,10 +13,14 @@ from reportlab.lib.enums import TA_LEFT
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import A5
+from reportlab.lib.utils import ImageReader
 from pypdf import PdfReader
 
 ROOT=Path(__file__).resolve().parents[1]
 DATA=json.loads((ROOT/'data/content.json').read_text(encoding='utf-8'))
+AUTHOR=json.loads((ROOT/'content/author.json').read_text(encoding='utf-8'))
+AUTHOR_IMAGE=ROOT/'public'/AUTHOR['image'].lstrip('/')
+AUTHOR_PARAGRAPHS=AUTHOR['bio'].split('\n\n')
 ARTICLES=DATA['articles']; CATEGORIES=DATA['categories']; TERMS=DATA['terms']
 DEST=ROOT/'public/downloads'; DEST.mkdir(parents=True,exist_ok=True)
 TMP=ROOT/'tmp/pdfs';TMP.mkdir(parents=True,exist_ok=True)
@@ -67,7 +71,10 @@ def make_epub():
     files={'book.css':css}
     files['cover.xhtml']=document('supasara · 供应链英语','<section class="cover"><p>SUPASARA / FIELD GUIDE</p><h1>供应链英语</h1><p>Supply Chain English</p><p>术语 · 场景 · 表达</p><p>177 篇文章 · 469 个词义条目</p><p>完整版本 '+esc(EDITION)+' · '+DATE+'</p></section>')
     files['intro.xhtml']=document('阅读说明','<h1>阅读说明</h1><p>本书面向中文母语的仓储、物流与供应链从业者，提供术语解释、原创教学案例和双语工作表达。</p><p>每个案例均为教学示例。专业用语的含义可能因系统、地区或合同变化，使用前请结合各篇边界说明。</p><p>本书完整收录七个分类的177篇文章，末尾词汇索引支持跳转。相同缩写的不同含义分别列出；CEC与CFC仍标记为待澄清。</p>')
-    nav='<h1>目录</h1><nav epub:type="toc" id="toc"><ol><li><a href="intro.xhtml">阅读说明</a></li>'
+    files['author.xhtml']=document('关于作者', '<h1>作者 · '+esc(AUTHOR['name'])+'</h1>'+''.join('<p>'+esc(p)+'</p>' for p in AUTHOR_PARAGRAPHS)+'<p>小红书：'+esc(AUTHOR['account'])+'</p><p>'+esc(AUTHOR['invitation'])+'</p><img src="images/yushu-rednote.png" alt="'+esc(AUTHOR['imageAlt'])+'" style="display:block;width:100%;max-width:24em;height:auto;margin:1em auto"/>')
+    files['images/yushu-rednote.png']=AUTHOR_IMAGE.read_bytes()
+    files['cover.xhtml']=files['cover.xhtml'].replace('</section>', '<p>作者 · '+esc(AUTHOR['name'])+'</p></section>')
+    nav='<h1>目录</h1><nav epub:type="toc" id="toc"><ol><li><a href="intro.xhtml">阅读说明</a></li><li><a href="author.xhtml">关于作者</a></li>'
     for c in CATEGORIES:
         group=[a for a in ARTICLES if a['category_id']==c['id']]
         nav+='<li><a href="'+group[0]['slug']+'.xhtml">'+esc(c['title_zh'])+'</a><ol>'
@@ -91,11 +98,12 @@ def make_epub():
     files['vocabulary.xhtml']=document('双语词汇索引',vocab)
     manifest='';spine=[]
     for i,(name,content) in enumerate(files.items()):
-        typ='text/css' if name.endswith('.css') else 'application/xhtml+xml'
+        typ='image/png' if name.endswith('.png') else 'text/css' if name.endswith('.css') else 'application/xhtml+xml'
         manifest+=f'<item id="i{i}" href="{name}" media-type="{typ}"'+(' properties="nav"' if name=='nav.xhtml' else '')+'/>'
         if name.endswith('.xhtml'):spine.append(f'<itemref idref="i{i}"/>')
     opf='<?xml version="1.0" encoding="utf-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="book-id" xml:lang="zh-CN"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="book-id">urn:supasara:supply-chain-english:'+EDITION+'</dc:identifier><dc:title>supasara · 供应链英语</dc:title><dc:language>zh-CN</dc:language><meta property="dcterms:modified">'+DATE+'T00:00:00Z</meta></metadata><manifest>'+manifest+'</manifest><spine>'+''.join(spine)+'</spine></package>'
     target=DEST/'supasara-complete.epub'
+    opf=opf.replace('<dc:language>', '<dc:creator>'+esc(AUTHOR['name'])+'</dc:creator><dc:language>')
     with zipfile.ZipFile(target,'w') as z:
         z.writestr('mimetype','application/epub+zip',compress_type=zipfile.ZIP_STORED)
         z.writestr('META-INF/container.xml','<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',compress_type=zipfile.ZIP_DEFLATED)
@@ -110,7 +118,7 @@ def make_epub():
                 tree=ET.fromstring(z.read(name));ids[name]={e.attrib['id'] for e in tree.iter() if 'id' in e.attrib}
         for name in [n for n in z.namelist() if n.endswith('.xhtml')]:
             for e in ET.fromstring(z.read(name)).iter():
-                href=e.attrib.get('href','')
+                href=e.attrib.get('href','') or e.attrib.get('src','')
                 if not href or '://' in href:continue
                 file,_,anchor=href.partition('#');dest='OEBPS/'+file if file else name
                 assert dest in z.namelist(),(name,href)
@@ -150,9 +158,15 @@ def make_pdf():
             canvas.setStrokeColor(colors.HexColor('#dfe4d7'));canvas.line(margin,32,width-margin,32)
         canvas.restoreState()
     target=DEST/'supasara-complete.pdf'
-    doc=Book(str(target),pagesize=A5,leftMargin=margin,rightMargin=margin,topMargin=35,bottomMargin=43,title='supasara · 供应链英语',author='')
+    doc=Book(str(target),pagesize=A5,leftMargin=margin,rightMargin=margin,topMargin=35,bottomMargin=43,title='supasara · 供应链英语',author=AUTHOR['name'])
     doc.addPageTemplates(PageTemplate('book',frames=[Frame(margin,43,usable,height-78,id='normal',leftPadding=0,rightPadding=0,topPadding=0,bottomPadding=0)],onPage=page))
     story=[Spacer(1,75),Paragraph('SUPASARA / FIELD GUIDE',styles['small']),Spacer(1,35),Paragraph('供应链英语',styles['title']),Paragraph('Supply Chain English',styles['subtitle']),Spacer(1,20),Paragraph('术语 · 场景 · 表达',base),Spacer(1,45),Paragraph('完整收录177篇文章<br/>7个主题 · 469个词义条目',base),Paragraph('版本 '+EDITION+' · '+DATE,styles['small']),PageBreak()]
+    story.insert(-1,Paragraph('作者 · '+esc(AUTHOR['name']),base))
+    author_heading=Paragraph('作者 · '+esc(AUTHOR['name']),styles['title'])
+    author_heading.anchor='author';author_heading.toc_title='关于作者';author_heading.level=0
+    image_width,image_height=ImageReader(str(AUTHOR_IMAGE)).getSize()
+    card=Image(str(AUTHOR_IMAGE),width=250,height=250*image_height/image_width);card.hAlign='CENTER'
+    story += [author_heading]+[Paragraph(esc(p),base) for p in AUTHOR_PARAGRAPHS]+[Paragraph('小红书：'+esc(AUTHOR['account']),base),PageBreak(),Paragraph('关注雨叔',styles['title']),Paragraph(esc(AUTHOR['invitation']),base),card,PageBreak()]
     story += [Paragraph('阅读说明',styles['title']),Paragraph('本书面向中文母语的仓储、物流与供应链从业者。每篇包括核心术语、使用场景、原创教学案例、双语表达、常见混淆和要点回顾。',base),Paragraph('所有案例均为教学示例。术语含义可能随地区、系统或合同而变化，请结合各篇说明。词汇索引保留不同语境；CEC与CFC仍标记为待澄清。',base),Paragraph('通过目录、PDF书签和文内链接跳转。电子阅读器用户也可选择同内容的EPUB版本。',base),PageBreak(),Paragraph('目录',styles['title'])]
     toc=TableOfContents();toc.levelStyles=[ParagraphStyle('toc0',parent=base,fontName='BookBold',fontSize=10,leading=16,spaceBefore=9),ParagraphStyle('toc1',parent=base,fontSize=8,leading=13,leftIndent=10,firstLineIndent=0,spaceAfter=3)]
     story.extend([toc,PageBreak()])
@@ -190,6 +204,7 @@ def make_pdf():
     alltext=''.join(p.extract_text() or '' for p in reader.pages)
     assert all(a['title'] in alltext for a in ARTICLES),'A chapter title is missing from PDF text'
     assert '核心术语' in alltext and '双语词汇索引' in alltext
+    assert AUTHOR['name']==reader.metadata.author and AUTHOR['account'] in alltext
     (TMP/'pdf-report.json').write_text(json.dumps({'pages':len(reader.pages),'chapters':len(chapter_pages),'chapter_pages':chapter_pages,'anchors':anchors},ensure_ascii=False,indent=2),encoding='utf-8')
     return target
 

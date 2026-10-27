@@ -1,20 +1,20 @@
 {
-  "edition": "1.0",
-  "updated": "2026-10-26",
+  "edition": "1.2",
+  "updated": "2026-10-27",
   "articleCount": 177,
   "termCount": 469,
   "files": [
     {
       "format": "PDF",
       "url": "/downloads/supasara-complete.pdf",
-      "bytes": 1826031,
-      "sha256": "264e4f7a06711ac0e36a82150b2ef626d9ad089efc83946ef1f37ec0fdc84135"
+      "bytes": 2757152,
+      "sha256": "caac0c6742d57d7489afb8438cb6c9656ea69dcfa96b14e1a034323496eb4fed"
     },
     {
       "format": "EPUB",
       "url": "/downloads/supasara-complete.epub",
-      "bytes": 334941,
-      "sha256": "5e907e166436a9d392b9d5d36a9471fe83c05a6b145daf5cc4370921ff87d4b6"
+      "bytes": 1163018,
+      "sha256": "b26f34bc863e9929e71d9a2a44bc31cff1614d1fa5400beb1d00c24dd4470da5"
     }
   ]
 }

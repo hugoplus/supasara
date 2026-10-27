@@ -10,7 +10,7 @@ A bilingual field guide to supply chain English, with searchable vocabulary, pra
 - 469 vocabulary entries, with Chinese/English search and category filters.
 - Article contents navigation, bilingual tables, related topics, and previous/next reading links.
 - Responsive layouts for desktop and mobile readers.
-- Complete downloadable PDF (505 pages) and reflowable EPUB editions, including all articles and a vocabulary index.
+- Complete downloadable PDF (507 pages) and reflowable EPUB editions, including all articles and a vocabulary index.
 - Context notes preserve different meanings of abbreviations such as ABC and JIT; uncertain terminology is explicitly marked.
 
 ## Development
@@ -18,11 +18,23 @@ A bilingual field guide to supply chain English, with searchable vocabulary, pra
 Requires Node.js 20.19 or newer and Yarn 4.18.1 (pinned via Corepack).
 
 ```sh
-corepack yarn install
-yarn dev
+corepack yarn install --immutable
+corepack yarn run dev
 ```
 
 Open http://localhost:3000. Run `corepack enable` once to make the `yarn` command available, or use `corepack yarn` in place of `yarn`. Commit `yarn.lock` and use `yarn install --immutable` in CI. The project uses the node-modules linker.
+
+### Windows: Yarn 1 version mismatch
+
+If `yarn run dev` reports that global Yarn 1.22.22 does not match `yarn@4.18.1`, use `corepack yarn run dev`. This invokes the pinned version directly, without requiring a global Yarn replacement. Verify it from the project directory with `corepack yarn --version`; the expected result is `4.18.1`.
+
+To enable the shorter `yarn` command permanently, run `corepack enable yarn`. When Node.js is installed under `C:\Program Files\nodejs`, this may require a PowerShell terminal opened **as Administrator**. After enabling, reopen your normal terminal, return to the project directory, and run `yarn --version` followed by `yarn run dev`. If the version still reports 1.x, run `where.exe yarn` to identify an older launcher earlier in PATH; continue using `corepack yarn` until that command-path conflict is resolved. Keep the project's `packageManager` field and Yarn lockfile.
+
+See the [official Yarn Corepack guide](https://yarnpkg.com/corepack).
+
+### Windows: garbled Chinese paths in MODULE_NOT_FOUND
+
+If an error replaces `小红书` with garbled characters while locating Next.js, the command launcher has changed the path's encoding. The project scripts invoke the installed JavaScript entry points directly through Node using relative paths, avoiding Windows package executable shims. Run `corepack yarn run dev` as usual. This also applies to the build, TypeScript, and browser-test scripts. No folder rename or global code-page change is required.
 
 The application uses Next.js App Router, React, TypeScript, Tailwind CSS, and `react-markdown` with `remark-gfm`. Markdown tables, lists, headings, and emphasis are rendered as semantic HTML. Raw HTML in articles is not enabled.
 
@@ -49,6 +61,10 @@ yarn test
 ```
 
 Preparation validates article IDs, categories, required sections, vocabulary mappings, and related links. It generates `data/content.json` and `public/data/search.json`; these generated folders are ignored by Git. Both development and production builds prepare content automatically. Search runs in the reader's browser without a database or external search service.
+
+## Author profile
+
+Author: 雨叔. 小红书账号：雨叔 北美仓储管理. The About page and both books share `content/author.json`. The supplied account card is stored unchanged at `public/images/yushu-rednote.png` and embedded in the EPUB for offline access. Regenerate both books after changing the profile or image.
 
 ## Complete books
 
@@ -79,13 +95,13 @@ yarn test:browser
 
 The browser suite covers desktop/mobile reading, Markdown tables, search, ambiguous terms, and book download endpoints. It serves the production `out/` directory on port 3177, so run `yarn build` first. It does not reuse another running application.
 
-Verified on 2026-10-26: Yarn immutable installation, the production static build, TypeScript checks, all five content/search/download tests, and all eight browser checks passed. Browser checks cover Chromium desktop and WebKit mobile against the built static export. Desktop and mobile screenshots were visually reviewed. Both full books were generated; EPUB structure and internal links passed checks; representative PDF pages were visually inspected.
+Verified on 2026-10-27: Yarn immutable installation, the production static build, TypeScript checks, all five content/search/download tests, and all ten browser checks passed. Browser checks cover Chromium desktop and WebKit mobile against the built static export. Desktop and mobile screenshots were visually reviewed. Both full books were generated; EPUB structure and internal links passed checks; representative PDF pages were visually inspected.
 
 ## Local production preview
 
 Run `yarn build`, then `yarn preview`, and open http://127.0.0.1:3177. If Yarn shims are not enabled, use `corepack yarn preview`. This loopback-only server previews the static export; Vercel serves the files directly in production.
 
-On Windows, OneDrive can mark generated folders read-only and cause an `EPERM` error during subsequent builds or tests. Clear the read-only attribute on generated `.next`, `out`, or `test-results` folders if affected; keep source files intact.
+On Windows, OneDrive can mark generated folders read-only and cause `EPERM` during directory cleanup. The development and build commands now run `scripts/prepare-cache.mjs`, which clears only the read-only directory attribute within `.next` and `out` on Windows; it does not delete files or traverse directory links. Development uses Next.js Webpack mode because OneDrive can reapply attributes while Turbopack replaces its generated chunk directory. Stop an existing development server with Ctrl+C before restarting `corepack yarn run dev`. Production builds retain the default bundler.
 
 ## Vercel deployment
 
